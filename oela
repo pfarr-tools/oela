@@ -1,0 +1,65 @@
+#!/usr/bin/env php
+<?php
+declare(strict_types=1);
+
+$root = __DIR__;
+$envFile = $root.'/.env';
+$exampleFile = $root.'/.env.example';
+$placeholder = 'BITTE_MIT_EINEM_LANGEN_ZUFAELLIGEN_WERT_ERSETZEN';
+
+function ensureEnv(string $envFile, string $exampleFile, string $placeholder): bool
+{
+    $created = false;
+    if (!is_file($envFile)) {
+        if (!is_file($exampleFile)) {
+            fwrite(STDERR, ".env.example fehlt.\n");
+            exit(1);
+        }
+        if (!copy($exampleFile, $envFile)) {
+            fwrite(STDERR, ".env konnte nicht angelegt werden.\n");
+            exit(1);
+        }
+        $created = true;
+    }
+
+    $contents = file_get_contents($envFile);
+    if ($contents === false) {
+        fwrite(STDERR, ".env konnte nicht gelesen werden.\n");
+        exit(1);
+    }
+
+    if (str_contains($contents, 'APP_SECRET='.$placeholder) || preg_match('/^APP_SECRET=\s*$/m', $contents)) {
+        $secret = bin2hex(random_bytes(32));
+        $contents = preg_replace('/^APP_SECRET=.*$/m', 'APP_SECRET='.$secret, $contents, 1);
+        if (file_put_contents($envFile, $contents) === false) {
+            fwrite(STDERR, "APP_SECRET konnte nicht in .env gespeichert werden.\n");
+            exit(1);
+        }
+        echo "Sicherer APP_SECRET wurde erzeugt.\n";
+    }
+
+    return $created;
+}
+
+$created = ensureEnv($envFile, $exampleFile, $placeholder);
+require $root.'/vendor/autoload.php';
+
+use Advent\App;
+
+$app = new App($root);
+$cmd = $argv[1] ?? 'help';
+
+if ($cmd === 'init') {
+    if ($created) echo ".env wurde aus .env.example angelegt.\n";
+    echo "Datenbank bereit.\n";
+    exit(0);
+}
+
+if ($cmd === 'admin-links') {
+    foreach ($app->locations() as $slug => $name) {
+        echo $name.": ".$app->baseUrl().'/'.$slug.'/admin?sig='.$app->adminSignature($slug).PHP_EOL;
+    }
+    exit(0);
+}
+
+echo "Befehle:\n  php oela init\n  php oela admin-links\n";

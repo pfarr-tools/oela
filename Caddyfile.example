@@ -1,0 +1,7 @@
+advent.example.de {
+    root * /var/www/advent/public
+    encode zstd gzip
+    php_fastcgi unix//run/php/php8.4-fpm.sock
+    try_files {path} /index.php?{query}
+    file_server
+}

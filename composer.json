@@ -1,0 +1,24 @@
+{
+  "name": "pfarr-tools/lebendiger-adventskalender",
+  "description": "Kleine mobile-first Anmeldung für einen Lebendigen Adventskalender",
+  "type": "project",
+  "require": {
+    "php": "^8.2",
+    "ext-pdo": "*",
+    "ext-pdo_sqlite": "*",
+    "phpoffice/phpspreadsheet": "^5.1"
+  },
+  "autoload": {
+    "psr-4": {
+      "Advent\\": "src/"
+    }
+  },
+  "scripts": {
+    "post-install-cmd": [
+      "@php oela init"
+    ],
+    "post-update-cmd": [
+      "@php oela init"
+    ]
+  }
+}

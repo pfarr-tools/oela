@@ -1,0 +1,1 @@
+<div class="text-center py-5"><h1 class="h2">Vielen Dank!</h1><p class="lead">Der <?=sprintf('%02d.', $day)?> Dezember ist für Sie reserviert.</p><a class="btn btn-outline-success" href="/<?=h($location)?>">Zurück zum Adventskalender</a></div>

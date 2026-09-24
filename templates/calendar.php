@@ -1,0 +1,3 @@
+<h1 class="h2 mb-1">Lebendiger Adventskalender</h1><p class="lead mb-4"><?=h($locationName)?></p>
+<p class="text-secondary">Grün markierte Termine sind noch frei. Tippen Sie auf einen freien Tag, um sich anzumelden.</p>
+<div class="row row-cols-4 row-cols-sm-5 gap-0 g-2"><?php for($d=1;$d<=23;$d++):$taken=isset($regs[$d]);?><div class="col"><?php if(!$taken):?><a class="day day-free" href="/<?=h($location)?>/<?=$d?>" aria-label="<?=$d?>. Dezember, frei"><?=$d?></a><?php else:?><div class="day day-taken" aria-label="<?=$d?>. Dezember, belegt"><?=$d?></div><?php endif?></div><?php endfor?></div>
