@@ -24,7 +24,12 @@ final class App
 
     public function env(string $key, ?string $default = null): string
     {
-        return (string)($this->env[$key] ?? getenv($key) ?: $default ?? '');
+        $environmentValue = getenv($key);
+        if ($environmentValue !== false) {
+            return (string)$environmentValue;
+        }
+
+        return (string)($this->env[$key] ?? $default ?? '');
     }
 
     public function locations(): array
