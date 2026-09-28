@@ -34,11 +34,51 @@ final class App
 
     public function locations(): array
     {
+        $configured = trim($this->env('LOCATION'));
+        if ($configured === '') {
+            return $this->defaultLocations();
+        }
+
+        $locations = [];
+        foreach (explode(',', $configured) as $name) {
+            $name = trim($name);
+            $slug = self::locationSlug($name);
+            if ($name !== '' && $slug !== '' && !isset($locations[$slug])) {
+                $locations[$slug] = $name;
+            }
+        }
+
+        return $locations ?: $this->defaultLocations();
+    }
+
+    public function weekdayShort(int $day, ?int $year = null): string
+    {
+        if ($day < 1 || $day > 23) {
+            throw new RuntimeException('Ungültiger Tag.');
+        }
+
+        $date = new \DateTimeImmutable(sprintf('%04d-12-%02d', $year ?? (int)date('Y'), $day));
+        return [
+            1 => 'Mo', 2 => 'Di', 3 => 'Mi', 4 => 'Do',
+            5 => 'Fr', 6 => 'Sa', 7 => 'So',
+        ][(int)$date->format('N')];
+    }
+
+    private function defaultLocations(): array
+    {
         return [
             'nebringen' => 'Nebringen',
             'oeschelbronn' => 'Öschelbronn',
             'tailfingen' => 'Tailfingen',
         ];
+    }
+
+    private static function locationSlug(string $name): string
+    {
+        $name = strtr($name, ['Ä'=>'Ae', 'Ö'=>'Oe', 'Ü'=>'Ue', 'ä'=>'ae', 'ö'=>'oe', 'ü'=>'ue', 'ß'=>'ss']);
+        $name = strtolower($name);
+        $name = preg_replace('/[^a-z0-9]+/', '-', $name) ?? '';
+        return trim($name, '-');
     }
 
     public function locationName(string $slug): ?string { return $this->locations()[$slug] ?? null; }
@@ -61,16 +101,48 @@ final class App
 
     public function save(string $location, int $day, array $data): void
     {
-        $sql = 'INSERT INTO registrations (location, day, name, street, house_number, phone, email, publication_consent, created_at, updated_at)
-                VALUES (:location,:day,:name,:street,:house_number,:phone,:email,:consent,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP)
-                ON CONFLICT(location,day) DO UPDATE SET name=excluded.name, street=excluded.street, house_number=excluded.house_number,
+        $sql = 'INSERT INTO registrations (location, day, name, address, street, house_number, phone, email, publication_consent, created_at, updated_at)
+                VALUES (:location,:day,:name,:address,:street,:house_number,:phone,:email,:consent,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP)
+                ON CONFLICT(location,day) DO UPDATE SET name=excluded.name, address=excluded.address, street=excluded.street, house_number=excluded.house_number,
                 phone=excluded.phone, email=excluded.email, publication_consent=excluded.publication_consent, updated_at=CURRENT_TIMESTAMP';
         $s = $this->db->prepare($sql);
         $s->execute([
-            ':location'=>$location, ':day'=>$day, ':name'=>$data['name'], ':street'=>$data['street'],
-            ':house_number'=>$data['house_number'], ':phone'=>$data['phone'], ':email'=>$data['email'] ?: null,
+            ':location'=>$location, ':day'=>$day, ':name'=>$data['name'], ':address'=>$data['address'],
+            ':street'=>$data['address'], ':house_number'=>'', ':phone'=>$data['phone'], ':email'=>$data['email'] ?: null,
             ':consent'=>!empty($data['publication_consent']) ? 1 : 0,
         ]);
+    }
+
+    public function dayAvailable(string $location, int $day, ?int $exceptDay = null): bool
+    {
+        if ($day < 1 || $day > 23) {
+            return false;
+        }
+        if ($exceptDay !== null && $day === $exceptDay) {
+            return true;
+        }
+
+        return $this->registration($location, $day) === null;
+    }
+
+    public function saveAdmin(string $location, int $currentDay, int $targetDay, array $data): void
+    {
+        if (!$this->dayAvailable($location, $targetDay, $currentDay)) {
+            throw new RuntimeException('day_taken');
+        }
+
+        $this->db->beginTransaction();
+        try {
+            if ($currentDay !== $targetDay) {
+                $delete = $this->db->prepare('DELETE FROM registrations WHERE location = ? AND day = ?');
+                $delete->execute([$location, $currentDay]);
+            }
+            $this->save($location, $targetDay, $data);
+            $this->db->commit();
+        } catch (Throwable $exception) {
+            $this->db->rollBack();
+            throw $exception;
+        }
     }
 
     public function delete(string $location, int $day): void
@@ -112,7 +184,11 @@ final class App
 
     private function loadEnv(): array
     {
-        $file = $this->root . '/.env'; $out=[];
+        $file = $this->root . '/.env';
+        if (!is_file($file)) {
+            $file = dirname($this->root) . '/.env';
+        }
+        $out=[];
         if (!is_file($file)) return $out;
         foreach (file($file, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) as $line) {
             $line=trim($line); if ($line==='' || str_starts_with($line,'#') || !str_contains($line,'=')) continue;
@@ -128,6 +204,7 @@ final class App
             location TEXT NOT NULL,
             day INTEGER NOT NULL CHECK(day BETWEEN 1 AND 23),
             name TEXT NOT NULL,
+            address TEXT NOT NULL DEFAULT \'\',
             street TEXT NOT NULL,
             house_number TEXT NOT NULL,
             phone TEXT NOT NULL,
@@ -137,5 +214,10 @@ final class App
             updated_at TEXT NOT NULL,
             UNIQUE(location, day)
         )');
+        $columns = $this->db->query('PRAGMA table_info(registrations)')->fetchAll(PDO::FETCH_COLUMN, 1);
+        if (!in_array('address', $columns, true)) {
+            $this->db->exec("ALTER TABLE registrations ADD COLUMN address TEXT NOT NULL DEFAULT ''");
+            $this->db->exec("UPDATE registrations SET address = trim(street || ' ' || house_number) WHERE address = ''");
+        }
     }
 }

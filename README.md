@@ -1,5 +1,7 @@
 # OELA – Ökumenischer Lebendiger Adventskalender
 
+<p><img src="docs/assets/oela_icon.png" alt="OELA-Logo" width="120"></p>
+
 OELA ist eine bewusst kleine, mobile-first optimierte Web-App zur Anmeldung und Verwaltung eines Lebendigen Adventskalenders für mehrere Orte. Die öffentliche Seite zeigt die Tage 1.–23. Dezember als Kalender; freie Termine können direkt gebucht werden. Die Verwaltung erfolgt ohne Benutzerkonten über signierte Links.
 
 ## Features
@@ -7,7 +9,7 @@ OELA ist eine bewusst kleine, mobile-first optimierte Web-App zur Anmeldung und 
 - separate öffentliche Kalenderseite pro Ort
 - 23 Slots vom 1.–23. Dezember
 - freie Termine grün und anklickbar, belegte Termine rot
-- Anmeldung mit Name, Straße/Hausnummer, Telefon, optionaler E-Mail und Veröffentlichungseinwilligung
+- Anmeldung mit Name, Ortsangabe, Telefon, optionaler E-Mail und Veröffentlichungseinwilligung
 - Schutz vor Doppelbelegung durch serverseitige Prüfung und eindeutige Datenbankbelegung
 - mobile-first Oberfläche mit Bootstrap 5
 - Verwaltung pro Ort über dauerhaften signierten Link, ohne Benutzerkonten
@@ -27,28 +29,38 @@ Plain PHP 8.2+, SQLite/PDO, Bootstrap 5 und PhpSpreadsheet. Bewusst kein Laravel
 
 ## Voraussetzungen
 
-- PHP 8.2+ mit PDO SQLite, mbstring, xml, zip und gd
-- Composer
-- Webserver mit Document Root auf `public/`
+- Docker mit Docker Compose
 
 ## Installation
 
 ```bash
-composer install --no-dev --optimize-autoloader
-# Beim ersten Lauf werden .env und ein sicherer APP_SECRET automatisch erzeugt.
+./oela init
 # Danach APP_URL in .env anpassen.
-php oela admin-links
+./oela up -d
+./oela admin-links
 ```
 
-Beim ersten `composer install` wird `.env` automatisch aus `.env.example` angelegt (falls sie noch fehlt) und ein kryptografisch zufälliger `APP_SECRET` erzeugt. Einen bereits gesetzten Secret überschreibt das Setup nicht. Danach nur noch `APP_URL` in `.env` auf die echte Domain setzen. `var/` muss für PHP schreibbar sein. Die SQLite-Datenbank wird automatisch angelegt.
+Beim ersten `./oela init` wird `.env` automatisch aus `.env.example` angelegt (falls sie noch fehlt) und ein kryptografisch zufälliger `APP_SECRET` erzeugt. Einen bereits gesetzten Secret überschreibt das Setup nicht. Danach nur noch `APP_URL` in `.env` auf die echte Domain setzen. `var/` muss für PHP schreibbar sein. Die SQLite-Datenbank wird automatisch angelegt.
 
-Zum lokalen Testen:
+Die Orte werden über eine kommagetrennte `LOCATION`-Einstellung konfiguriert,
+zum Beispiel `LOCATION=Nebringen,Öschelbronn,Tailfingen`. Daraus entstehen die
+Slugs automatisch (`nebringen`, `oeschelbronn`, `tailfingen`); `ß` wird dabei zu
+`ss`.
+
+Die Anwendung ist anschließend unter `http://localhost:8080` erreichbar.
+Der Port kann mit `APP_PORT` in `.env` geändert werden. PHP und Composer
+werden innerhalb des Containers ausgeführt, beispielsweise mit `./oela composer
+install`.
+
+Tests laufen ausschließlich über den getrennten Testpfad:
 
 ```bash
-php -S localhost:8080 -t public public/index.php
+./oela test
 ```
 
-Dann `APP_URL=http://localhost:8080` setzen.
+Der Testbefehl setzt `APP_ENV=testing` und verwendet eine kurzlebige SQLite-
+Datenbank unter `/tmp/oela-testing.sqlite`; `var/advent.sqlite` wird dabei
+nicht verwendet.
 
 ## Öffentliche Seiten
 

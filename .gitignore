@@ -1,4 +1,7 @@
 /vendor/
+/src/vendor/
+/.superpowers/
 /.env
+/src/.env
 /var/*.sqlite
 /var/*.sqlite-*

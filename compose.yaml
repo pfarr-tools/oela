@@ -1,0 +1,20 @@
+name: oela
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    working_dir: /var/www/html
+    environment:
+      APP_ENV: "${APP_ENV:-local}"
+    volumes:
+      - ./src:/var/www/html
+      - ./.env:/var/www/.env
+      - ./var:/var/www/html/var
+      - oela_vendor:/var/www/html/vendor
+    ports:
+      - "${APP_PORT:-8080}:8000"
+
+volumes:
+  oela_vendor:

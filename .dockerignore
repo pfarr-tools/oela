@@ -1,0 +1,7 @@
+.env
+.git
+.gitignore
+var/
+src/vendor/
+src/.phpunit.result.cache
+docs/

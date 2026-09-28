@@ -33,8 +33,7 @@ Ein belegter Slot enthält:
 - Tag
 - Ort
 - Name
-- Straße
-- Hausnummer
+- Ortsangabe
 - Telefon
 - E-Mail (optional)
 - Kennzeichen/Einwilligung zur Veröffentlichung
@@ -50,7 +49,7 @@ Route pro Ort, z. B. `/nebringen`.
 - Belegt: rot und nicht zur Anmeldung anklickbar.
 - Klick auf freien Slot öffnet das Anmeldeformular.
 - Vor dem Speichern serverseitig erneut prüfen, dass der Slot noch frei ist.
-- Formular: Name, Straße, Hausnummer, Telefon, optionale E-Mail, Veröffentlichungseinwilligung.
+- Formular: Name, Ortsangabe, Telefon, optionale E-Mail, Veröffentlichungseinwilligung.
 - Mobile-first und mit möglichst wenig eigenem JavaScript.
 
 ## Verwaltung
@@ -125,6 +124,7 @@ Nach dem ersten Setup muss `APP_URL` in `.env` auf die echte öffentliche Basis-
 - HTML escapen, sofern Inhalte nicht ausdrücklich als vertrauenswürdiges eigenes Markup erzeugt werden.
 - UI weiterhin mobile-first und Bootstrap-basiert halten.
 - Texte und Oberfläche sind deutschsprachig.
+- Commits verwenden Conventional Commits mit einer deutschen Commit-Botschaft.
 
 ## Vor Abschluss einer Änderung
 
