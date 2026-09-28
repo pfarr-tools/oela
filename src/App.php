@@ -83,6 +83,20 @@ final class App
 
     public function locationName(string $slug): ?string { return $this->locations()[$slug] ?? null; }
 
+    public function isLocked(string $location): bool
+    {
+        $s = $this->db->prepare('SELECT registration_locked FROM location_settings WHERE location = ?');
+        $s->execute([$location]);
+        return (int)$s->fetchColumn() === 1;
+    }
+
+    public function setLocked(string $location, bool $locked): void
+    {
+        $s = $this->db->prepare('INSERT INTO location_settings (location, registration_locked) VALUES (?, ?)
+            ON CONFLICT(location) DO UPDATE SET registration_locked = excluded.registration_locked');
+        $s->execute([$location, $locked ? 1 : 0]);
+    }
+
     public function registration(string $location, int $day): ?array
     {
         $s = $this->db->prepare('SELECT * FROM registrations WHERE location = ? AND day = ?');
@@ -213,6 +227,10 @@ final class App
             created_at TEXT NOT NULL,
             updated_at TEXT NOT NULL,
             UNIQUE(location, day)
+        )');
+        $this->db->exec('CREATE TABLE IF NOT EXISTS location_settings (
+            location TEXT PRIMARY KEY,
+            registration_locked INTEGER NOT NULL DEFAULT 0 CHECK(registration_locked IN (0, 1))
         )');
         $columns = $this->db->query('PRAGMA table_info(registrations)')->fetchAll(PDO::FETCH_COLUMN, 1);
         if (!in_array('address', $columns, true)) {

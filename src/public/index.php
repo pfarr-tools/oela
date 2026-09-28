@@ -68,6 +68,11 @@ if (($parts[1]??'') === 'admin') {
     if($action==='delete-all' && $method==='POST'){
         if(!$app->checkCsrf($_POST['_csrf']??null)) abortPage(419,'Sitzung abgelaufen.'); $app->deleteAll($loc); redirect('/'.$loc.'/admin?sig='.rawurlencode($sig));
     }
+    if($action==='toggle-lock' && $method==='POST'){
+        if(!$app->checkCsrf($_POST['_csrf']??null)) abortPage(419,'Sitzung abgelaufen.');
+        $app->setLocked($loc, !$app->isLocked($loc));
+        redirect('/'.$loc.'/admin?sig='.rawurlencode($sig));
+    }
     if($action==='edit' && isset($parts[3])){
         $day=(int)$parts[3]; if($day<1||$day>23) abortPage(404,'Ungültiger Tag.'); $existing=$app->registration($loc,$day);
         $availableDays = array_values(array_filter(range(1, 23), fn(int $candidate): bool => $app->dayAvailable($loc, $candidate, $day)));
@@ -110,6 +115,7 @@ if(count($parts)===1) render('calendar',['app'=>$app,'title'=>'Lebendiger Advent
 // Öffentliche Anmeldung
 if(count($parts)===2 && ctype_digit($parts[1])){
     $day=(int)$parts[1]; if($day<1||$day>23) abortPage(404,'Ungültiger Tag.');
+    if($app->isLocked($loc)) abortPage(403,'Die Anmeldung ist für diesen Ort derzeit nicht möglich.');
     if($app->registration($loc,$day)) abortPage(409,'Dieser Termin ist inzwischen bereits vergeben.');
     $data=['name'=>'','address'=>'','phone'=>'','email'=>'','publication_consent'=>0]; $errors=[];
     if($method==='POST'){

@@ -40,6 +40,12 @@ Plain PHP 8.2+, SQLite/PDO, Bootstrap 5 und PhpSpreadsheet. Bewusst kein Laravel
 ./oela admin-links
 ```
 
+Nach einem Pull aktualisiert und startet `./oela update` die Container neu:
+
+```bash
+./oela update
+```
+
 Beim ersten `./oela init` wird `.env` automatisch aus `.env.example` angelegt (falls sie noch fehlt) und ein kryptografisch zufälliger `APP_SECRET` erzeugt. Einen bereits gesetzten Secret überschreibt das Setup nicht. Danach nur noch `APP_URL` in `.env` auf die echte Domain setzen. `var/` muss für PHP schreibbar sein. Die SQLite-Datenbank wird automatisch angelegt.
 
 Die Orte werden über eine kommagetrennte `LOCATION`-Einstellung konfiguriert,
@@ -73,6 +79,10 @@ Freie Tage 1–23 sind grün und anklickbar, belegte rot.
 ## Verwaltung
 
 `php oela admin-links` erzeugt für jeden Ort den dauerhaften signierten Verwaltungslink. Dort stehen immer alle Slots 1–23. `Edit` öffnet den Slot, bei einem freien Slot als leeres Formular. Belegte Slots können nach Bestätigung gelöscht werden. Außerdem gibt es XLSX-Export und „Alle löschen“ mit Bestätigung.
+
+Jeder Ort kann in der Verwaltung vorübergehend gesperrt oder wieder freigegeben
+werden. Bei einer Sperre verschwinden die öffentlichen 1–23-Schaltflächen und
+auch direkte Anmelde-URLs werden serverseitig abgewiesen.
 
 ## TYPO3 / ELKW Embed
 

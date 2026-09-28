@@ -33,6 +33,14 @@ case "$command" in
     restart)
         exec docker compose restart "$@"
         ;;
+    update)
+        ensure_env
+        git pull --ff-only
+        docker compose build
+        docker compose run --rm app composer install --no-interaction --prefer-dist --no-progress
+        docker compose up -d
+        exec docker compose run --rm app php oela init "$@"
+        ;;
     status|ps)
         exec docker compose ps "$@"
         ;;
@@ -63,6 +71,7 @@ OELA Entwicklungsbefehle
   ./oela up [-d]
   ./oela down
   ./oela restart
+  ./oela update
   ./oela status
   ./oela logs [dienst]
   ./oela shell

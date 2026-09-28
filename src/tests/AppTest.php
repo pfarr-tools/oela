@@ -27,6 +27,17 @@ try {
     if ($app->weekdayShort(1, 2026) !== 'Di') {
         throw new RuntimeException('Der Wochentag für den 1. Dezember 2026 ist falsch.');
     }
+    if ($app->isLocked('nebringen')) {
+        throw new RuntimeException('Ein Ort ist standardmäßig gesperrt.');
+    }
+    $app->setLocked('nebringen', true);
+    if (!$app->isLocked('nebringen')) {
+        throw new RuntimeException('Der Ort konnte nicht gesperrt werden.');
+    }
+    $app->setLocked('nebringen', false);
+    if ($app->isLocked('nebringen')) {
+        throw new RuntimeException('Der Ort konnte nicht wieder freigegeben werden.');
+    }
     $app->save('nebringen', 1, [
         'name' => 'Test',
         'address' => 'Teststraße 1',

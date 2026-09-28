@@ -71,6 +71,8 @@ Die Verwaltung zeigt immer alle Slots 1–23:
 - XLSX-Download pro Ort.
 - „Alle löschen“ löscht alle Einträge des jeweiligen Orts.
 - Jede Löschaktion braucht eine ausdrückliche Bestätigung.
+- Jeder Ort kann unabhängig gesperrt und wieder freigegeben werden. Standardmäßig ist die Anmeldung freigegeben.
+- Bei gesperrtem Ort zeigt die öffentliche Kalenderseite keine 1–23-Schaltflächen; direkte Anmelde-URLs werden serverseitig abgewiesen.
 
 ## Öffentlicher Embed
 
