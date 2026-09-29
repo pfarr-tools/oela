@@ -83,6 +83,25 @@ final class App
 
     public function locationName(string $slug): ?string { return $this->locations()[$slug] ?? null; }
 
+    public function legalMarkdown(string $envKey): ?string
+    {
+        $configuredPath = trim($this->env($envKey));
+        if ($configuredPath === '') {
+            return null;
+        }
+        $path = str_starts_with($configuredPath, '/')
+            ? $configuredPath
+            : $this->root.'/'.$configuredPath;
+        $realPath = realpath($path);
+        $realRoot = realpath($this->root);
+        if ($realPath === false || $realRoot === false || !is_file($realPath) ||
+            !str_starts_with($realPath, $realRoot.'/')) {
+            return null;
+        }
+        $markdown = file_get_contents($realPath);
+        return $markdown === false ? null : $markdown;
+    }
+
     public function isLocked(string $location): bool
     {
         $s = $this->db->prepare('SELECT registration_locked FROM location_settings WHERE location = ?');

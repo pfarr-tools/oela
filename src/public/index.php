@@ -2,6 +2,7 @@
 declare(strict_types=1);
 require dirname(__DIR__) . '/vendor/autoload.php';
 require dirname(__DIR__) . '/Validation.php';
+require dirname(__DIR__) . '/Markdown.php';
 
 if (PHP_SAPI === 'cli-server') {
     $requestedPath = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?? '/';
@@ -29,6 +30,19 @@ function render(string $template, array $vars=[]): never {
 }
 // Startseite: Auswahl der drei Orte
 if (!$parts) render('home', ['app'=>$app, 'title'=>'Lebendiger Adventskalender']);
+
+if (count($parts) === 1 && in_array($parts[0], ['impressum', 'datenschutz'], true)) {
+    $key = $parts[0] === 'impressum' ? 'IMPRESSUM_MD' : 'DATENSCHUTZ_MD';
+    $markdown = $app->legalMarkdown($key);
+    if ($markdown === null) {
+        abortPage(404, 'Seite nicht gefunden.');
+    }
+    render('legal', [
+        'app' => $app,
+        'title' => ucfirst($parts[0]),
+        'markdown' => $markdown,
+    ]);
+}
 
 // Öffentlicher HTML-Snippet für TYPO3
 if (($parts[0]??'') === 'embed' && count($parts)===2) {

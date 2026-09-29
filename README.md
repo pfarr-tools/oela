@@ -53,6 +53,17 @@ zum Beispiel `LOCATION=Nebringen,Öschelbronn,Tailfingen`. Daraus entstehen die
 Slugs automatisch (`nebringen`, `oeschelbronn`, `tailfingen`); `ß` wird dabei zu
 `ss`.
 
+Die optionalen Seiten für Impressum und Datenschutz werden über Markdown-Dateien
+konfiguriert:
+
+```dotenv
+IMPRESSUM_MD=content/impressum.md
+DATENSCHUTZ_MD=content/datenschutz.md
+```
+
+Fehlt eine dieser Einstellungen oder ist die Datei nicht vorhanden, wird der
+jeweilige Footer-Link nicht angezeigt und die Seite ist nicht verfügbar.
+
 Die Anwendung ist anschließend unter `http://localhost:8080` erreichbar.
 Der Port kann mit `APP_PORT` in `.env` geändert werden. PHP und Composer
 werden innerhalb des Containers ausgeführt, beispielsweise mit `./oela composer
@@ -114,7 +125,10 @@ fetch('https://advent.example.de/embed/nebringen')
 
 Die öffentliche Anmeldung verlangt die Einwilligung zur Veröffentlichung von Name und Adresse. Telefon und E-Mail dienen nur der Organisation und erscheinen nicht im Embed. Im Admin-Formular kann die Veröffentlichung unabhängig ein- oder ausgeschaltet werden.
 
-Eine eigene Datenschutzerklärung bzw. Information zur Datenverarbeitung der Kirchengemeinde muss auf der späteren Website ergänzt bzw. verlinkt werden; sie ist bewusst nicht mit einem erfundenen Rechtstext in dieser App vorbelegt.
+Die mitgelieferten Markdown-Texte beschreiben die für OELA eingerichtete
+Datenverarbeitung. Vor dem produktiven Einsatz müssen die verantwortliche
+Stelle, der Hostingbetrieb und die Kontaktdaten durch den Betreiber geprüft
+und bei Änderungen aktualisiert werden.
 
 ## Backup
 

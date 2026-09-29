@@ -60,7 +60,7 @@ case "$command" in
             -e APP_ENV=testing \
             -e APP_SECRET=oela-testing-secret-oela-testing-secret \
             -e DB_PATH=/tmp/oela-testing.sqlite \
-            app sh -c 'php tests/AppTest.php && php tests/ValidationTest.php' "$@"
+            app sh -c 'php tests/AppTest.php && php tests/ValidationTest.php && php tests/LegalTest.php' "$@"
         ;;
     help|-h|--help)
         cat <<'USAGE'
