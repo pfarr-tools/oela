@@ -14,6 +14,13 @@ ensure_env() {
     fi
 }
 
+fix_runtime_permissions() {
+    docker compose run --rm --user root \
+        -e OELA_UID="$OELA_UID" \
+        -e OELA_GID="$OELA_GID" \
+        app sh -c 'chown "$OELA_UID:$OELA_GID" /var/www/html/var && find /var/www/html/var -maxdepth 1 -type f \( -name "advent.sqlite" -o -name "advent.sqlite-*" \) -exec chown "$OELA_UID:$OELA_GID" {} +'
+}
+
 command="${1:-help}"
 shift || true
 
@@ -40,6 +47,7 @@ case "$command" in
         ensure_env
         git pull --ff-only
         docker compose build
+        fix_runtime_permissions
         docker compose run --rm app composer install --no-interaction --prefer-dist --no-progress
         docker compose up -d
         exec docker compose run --rm app php oela init "$@"
