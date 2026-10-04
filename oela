@@ -45,8 +45,13 @@ case "$command" in
         ;;
     update)
         ensure_env
-        git pull --ff-only
+        if [[ "${1:-}" != "--after-pull" ]]; then
+            git pull --ff-only
+            exec "$0" update --after-pull "$@"
+        fi
+        shift
         docker compose build
+        echo "Setze Rechte für die persistenten Laufzeitdaten."
         fix_runtime_permissions
         docker compose run --rm app composer install --no-interaction --prefer-dist --no-progress
         docker compose up -d
