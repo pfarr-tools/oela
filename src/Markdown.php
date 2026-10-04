@@ -66,6 +66,7 @@ function renderMarkdown(?string $markdown): string
 function markdownInline(string $text): string
 {
     $text = htmlspecialchars($text, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+    $text = preg_replace('/&lt;br\s*\/?&gt;/i', '<br>', $text) ?? $text;
     $text = preg_replace_callback(
         '/\[([^\]]+)\]\(((?:https?:\/\/|mailto:|#)[^)]+)\)/',
         static fn(array $match): string => '<a href="'.$match[2].'">'.$match[1].'</a>',

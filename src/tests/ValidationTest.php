@@ -5,7 +5,8 @@ require dirname(__DIR__).'/Validation.php';
 
 [$data, $errors] = \Advent\validateRegistration([
     'name' => 'Test',
-    'address' => 'Teststraße 1',
+    'street' => 'Teststraße',
+    'house_number' => '1',
     'phone' => '0123',
 ]);
 
@@ -15,7 +16,8 @@ if ($data['publication_consent'] !== 0 || !isset($errors['publication_consent'])
 
 [, $errors] = \Advent\validateRegistration([
     'name' => 'Test',
-    'address' => 'Teststraße 1',
+    'street' => 'Teststraße',
+    'house_number' => '1',
     'phone' => '0123',
     'publication_consent' => '1',
 ]);

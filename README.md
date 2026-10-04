@@ -9,7 +9,7 @@ OELA ist eine bewusst kleine, mobile-first optimierte Web-App zur Anmeldung und 
 - separate öffentliche Kalenderseite pro Ort
 - 23 Slots vom 1.–23. Dezember
 - freie Termine grün und anklickbar, belegte Termine rot
-- Anmeldung mit Name, Ortsangabe, Telefon, optionaler E-Mail und Veröffentlichungseinwilligung
+- Anmeldung mit Name, Straße, Hausnummer, Telefon, optionaler E-Mail und Veröffentlichungseinwilligung
 - Schutz vor Doppelbelegung durch serverseitige Prüfung und eindeutige Datenbankbelegung
 - mobile-first Oberfläche mit Bootstrap 5
 - Verwaltung pro Ort über dauerhaften signierten Link, ohne Benutzerkonten
@@ -52,6 +52,15 @@ Die Orte werden über eine kommagetrennte `LOCATION`-Einstellung konfiguriert,
 zum Beispiel `LOCATION=Nebringen,Öschelbronn,Tailfingen`. Daraus entstehen die
 Slugs automatisch (`nebringen`, `oeschelbronn`, `tailfingen`); `ß` wird dabei zu
 `ss`.
+
+Titel, Logo und Text der Veröffentlichungseinwilligung können ebenfalls über
+`.env` angepasst werden:
+
+```dotenv
+APP_TITLE=Lebendiger Adventskalender
+LOGO_IMAGE=/oela_icon.png
+PUBLICATION_CONSENT_TEXT=Ich bin damit einverstanden, dass mein Name und die angegebene Adresse als Veranstaltungsort des Lebendigen Adventskalenders öffentlich auf der Homepage veröffentlicht werden.
+```
 
 Die optionalen Seiten für Impressum und Datenschutz werden über Markdown-Dateien
 konfiguriert:

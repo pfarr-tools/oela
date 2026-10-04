@@ -2,10 +2,10 @@
 
 ## Anbieterin
 
-Evangelische Kirchengemeinde Gäufelden  
-Buchenstraße 29  
-71126 Gäufelden-Nebringen  
-Telefon: +49 7032 75567  
+Evangelische Kirchengemeinde Gäufelden<br>
+Buchenstraße 29<br>
+71126 Gäufelden-Nebringen<br>
+Telefon: +49 7032 75567<br>
 [pfarramt.nebringen@elkw.de](mailto:pfarramt.nebringen@elkw.de)
 
 ## Vertretung und Verantwortlichkeit

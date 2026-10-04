@@ -4,12 +4,13 @@ namespace Advent;
 function validateRegistration(array $in, bool $requireConsent = true): array
 {
     $data = [
-        'name'=>trim((string)($in['name']??'')), 'address'=>trim((string)($in['address']??'')),
+        'name'=>trim((string)($in['name']??'')), 'street'=>trim((string)($in['street']??'')),
+        'house_number'=>trim((string)($in['house_number']??'')),
         'phone'=>trim((string)($in['phone']??'')),
         'email'=>trim((string)($in['email']??'')), 'publication_consent'=>isset($in['publication_consent']) ? 1 : 0,
     ];
     $errors=[];
-    foreach (['name'=>'Name','address'=>'Ortsangabe','phone'=>'Telefon'] as $k=>$label) {
+    foreach (['name'=>'Name','street'=>'Straße','house_number'=>'Hausnummer','phone'=>'Telefon'] as $k=>$label) {
         if ($data[$k]==='') {
             $errors[$k]="$label ist erforderlich.";
         }

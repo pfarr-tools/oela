@@ -9,6 +9,20 @@ if (PHP_SAPI === 'cli-server') {
     if ($requestedPath !== '/' && is_file(__DIR__ . $requestedPath)) {
         return false;
     }
+    if (preg_match('#^/content/([A-Za-z0-9._-]+\.(?:jpe?g|png|gif|webp|svg))$#i', $requestedPath, $match)) {
+        $contentFile = dirname(__DIR__).'/content/'.$match[1];
+        if (is_file($contentFile)) {
+            $mimeTypes = [
+                'jpg' => 'image/jpeg', 'jpeg' => 'image/jpeg', 'png' => 'image/png',
+                'gif' => 'image/gif', 'webp' => 'image/webp', 'svg' => 'image/svg+xml',
+            ];
+            $extension = strtolower(pathinfo($contentFile, PATHINFO_EXTENSION));
+            header('Content-Type: '.$mimeTypes[$extension]);
+            header('Cache-Control: public, max-age=3600');
+            readfile($contentFile);
+            exit;
+        }
+    }
 }
 
 use Advent\App;
@@ -29,7 +43,7 @@ function render(string $template, array $vars=[]): never {
     require dirname(__DIR__).'/templates/layout.php'; exit;
 }
 // Startseite: Auswahl der drei Orte
-if (!$parts) render('home', ['app'=>$app, 'title'=>'Lebendiger Adventskalender']);
+if (!$parts) render('home', ['app'=>$app, 'title'=>$app->title()]);
 
 if (count($parts) === 1 && in_array($parts[0], ['impressum', 'datenschutz'], true)) {
     $key = $parts[0] === 'impressum' ? 'IMPRESSUM_MD' : 'DATENSCHUTZ_MD';
@@ -39,7 +53,7 @@ if (count($parts) === 1 && in_array($parts[0], ['impressum', 'datenschutz'], tru
     }
     render('legal', [
         'app' => $app,
-        'title' => ucfirst($parts[0]),
+        'title' => $app->title().' – '.ucfirst($parts[0]),
         'markdown' => $markdown,
     ]);
 }
@@ -54,7 +68,7 @@ if (($parts[0]??'') === 'embed' && count($parts)===2) {
     echo '<div class="lebendiger-advent-termine" data-ort="'.h($loc).'">';
     $shown=0;
     foreach($regs as $day=>$r) if((int)$r['publication_consent']===1){
-        echo '<div class="lebendiger-advent-termin"><strong>'.sprintf('%02d.12.', $day).'</strong> '.h($r['name']).', '.h($r['address']).'</div>';
+        echo '<div class="lebendiger-advent-termin"><strong>'.sprintf('%02d.12.', $day).'</strong> '.h($r['name']).', '.h($app->address($r)).'</div>';
         $shown++;
     }
     if(!$shown) echo '<p>Noch keine Termine veröffentlicht.</p>';
@@ -70,7 +84,7 @@ if (($parts[1]??'') === 'admin') {
     if($action==='export' && $method==='GET'){
         $regs=$app->registrations($loc); $sheet=(new Spreadsheet())->getActiveSheet(); $sheet->setTitle($locationName);
         $sheet->fromArray(['Datum','Wochentag','Name','Ortsangabe','Telefon','E-Mail','Veröffentlichung'], null, 'A1');
-        $row=2; foreach($regs as $day=>$r){ $sheet->fromArray([sprintf('%02d.12.',$day),$app->weekdayShort((int)$day),$r['name'],$r['address'],$r['phone'],$r['email']??'',(int)$r['publication_consent']===1?'Ja':'Nein'],null,'A'.$row++); }
+        $row=2; foreach($regs as $day=>$r){ $sheet->fromArray([sprintf('%02d.12.',$day),$app->weekdayShort((int)$day),$r['name'],$app->address($r),$r['phone'],$r['email']??'',(int)$r['publication_consent']===1?'Ja':'Nein'],null,'A'.$row++); }
         foreach(range('A','G') as $col) $sheet->getColumnDimension($col)->setAutoSize(true);
         header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
         $filename = sprintf('%d Adventskalender %s.xlsx', (int)date('Y'), $locationName);
@@ -112,33 +126,33 @@ if (($parts[1]??'') === 'admin') {
                 }
             }
             $availableDays = array_values(array_filter(range(1, 23), fn(int $candidate): bool => $app->dayAvailable($loc, $candidate, $day)));
-            render('form',['app'=>$app,'title'=>'Termin bearbeiten','location'=>$loc,'locationName'=>$locationName,'day'=>$targetDay,'data'=>$data,'errors'=>$errors,'admin'=>true,'sig'=>$sig,'availableDays'=>$availableDays]);
+        render('form',['app'=>$app,'title'=>$app->title().' – Termin bearbeiten','location'=>$loc,'locationName'=>$locationName,'day'=>$targetDay,'data'=>$data,'errors'=>$errors,'admin'=>true,'sig'=>$sig,'availableDays'=>$availableDays]);
         }
-        $data=$existing?:['name'=>'','address'=>'','phone'=>'','email'=>'','publication_consent'=>1];
-        render('form',['app'=>$app,'title'=>'Termin bearbeiten','location'=>$loc,'locationName'=>$locationName,'day'=>$day,'data'=>$data,'errors'=>[],'admin'=>true,'sig'=>$sig,'availableDays'=>$availableDays]);
+        $data=$existing?:['name'=>'','street'=>'','house_number'=>'','phone'=>'','email'=>'','publication_consent'=>1];
+        render('form',['app'=>$app,'title'=>$app->title().' – Termin bearbeiten','location'=>$loc,'locationName'=>$locationName,'day'=>$day,'data'=>$data,'errors'=>[],'admin'=>true,'sig'=>$sig,'availableDays'=>$availableDays]);
     }
     if($action==='delete' && isset($parts[3]) && $method==='POST'){
         if(!$app->checkCsrf($_POST['_csrf']??null)) abortPage(419,'Sitzung abgelaufen.'); $day=(int)$parts[3]; if($day>=1&&$day<=23)$app->delete($loc,$day); redirect('/'.$loc.'/admin?sig='.rawurlencode($sig));
     }
-    render('admin',['app'=>$app,'title'=>'Verwaltung – '.$locationName,'location'=>$loc,'locationName'=>$locationName,'regs'=>$app->registrations($loc),'sig'=>$sig]);
+    render('admin',['app'=>$app,'title'=>$app->title().' – Verwaltung – '.$locationName,'location'=>$loc,'locationName'=>$locationName,'regs'=>$app->registrations($loc),'sig'=>$sig]);
 }
 
 // Öffentlicher Kalender
-if(count($parts)===1) render('calendar',['app'=>$app,'title'=>'Lebendiger Adventskalender – '.$locationName,'location'=>$loc,'locationName'=>$locationName,'regs'=>$app->registrations($loc)]);
+if(count($parts)===1) render('calendar',['app'=>$app,'title'=>$app->title().' – '.$locationName,'location'=>$loc,'locationName'=>$locationName,'regs'=>$app->registrations($loc)]);
 
 // Öffentliche Anmeldung
 if(count($parts)===2 && ctype_digit($parts[1])){
     $day=(int)$parts[1]; if($day<1||$day>23) abortPage(404,'Ungültiger Tag.');
     if($app->isLocked($loc)) abortPage(403,'Die Anmeldung ist für diesen Ort derzeit nicht möglich.');
     if($app->registration($loc,$day)) abortPage(409,'Dieser Termin ist inzwischen bereits vergeben.');
-    $data=['name'=>'','address'=>'','phone'=>'','email'=>'','publication_consent'=>0]; $errors=[];
+    $data=['name'=>'','street'=>'','house_number'=>'','phone'=>'','email'=>'','publication_consent'=>0]; $errors=[];
     if($method==='POST'){
         if(!$app->checkCsrf($_POST['_csrf']??null)) abortPage(419,'Sitzung abgelaufen.'); [$data,$errors]=validateRegistration($_POST);
         if(!$errors){
             try{$app->save($loc,$day,$data);}catch(Throwable $e){ if(str_contains($e->getMessage(),'UNIQUE')) abortPage(409,'Dieser Termin wurde gerade von jemand anderem vergeben.'); throw $e; }
-            render('success',['app'=>$app,'title'=>'Vielen Dank','location'=>$loc,'locationName'=>$locationName,'day'=>$day]);
+            render('success',['app'=>$app,'title'=>$app->title().' – Vielen Dank','location'=>$loc,'locationName'=>$locationName,'day'=>$day]);
         }
     }
-    render('form',['app'=>$app,'title'=>sprintf('%02d. Dezember – %s',$day,$locationName),'location'=>$loc,'locationName'=>$locationName,'day'=>$day,'data'=>$data,'errors'=>$errors,'admin'=>false,'sig'=>'']);
+    render('form',['app'=>$app,'title'=>sprintf('%s – %02d. Dezember – %s',$app->title(),$day,$locationName),'location'=>$loc,'locationName'=>$locationName,'day'=>$day,'data'=>$data,'errors'=>$errors,'admin'=>false,'sig'=>'']);
 }
 abortPage(404,'Seite nicht gefunden.');

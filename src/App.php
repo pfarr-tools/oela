@@ -6,6 +6,10 @@ use RuntimeException;
 
 final class App
 {
+    private const DEFAULT_TITLE = 'Lebendiger Adventskalender';
+    private const DEFAULT_LOGO_IMAGE = '/oela_icon.png';
+    private const DEFAULT_PUBLICATION_CONSENT_TEXT = 'Ich bin damit einverstanden, dass mein Name und die angegebene Adresse als Veranstaltungsort des Lebendigen Adventskalenders öffentlich auf der Homepage veröffentlicht werden.';
+
     private array $env;
     private PDO $db;
 
@@ -30,6 +34,21 @@ final class App
         }
 
         return (string)($this->env[$key] ?? $default ?? '');
+    }
+
+    public function title(): string
+    {
+        return trim($this->env('APP_TITLE', self::DEFAULT_TITLE)) ?: self::DEFAULT_TITLE;
+    }
+
+    public function logoImage(): string
+    {
+        return trim($this->env('LOGO_IMAGE', self::DEFAULT_LOGO_IMAGE)) ?: self::DEFAULT_LOGO_IMAGE;
+    }
+
+    public function publicationConsentText(): string
+    {
+        return trim($this->env('PUBLICATION_CONSENT_TEXT', self::DEFAULT_PUBLICATION_CONSENT_TEXT)) ?: self::DEFAULT_PUBLICATION_CONSENT_TEXT;
     }
 
     public function locations(): array
@@ -82,6 +101,12 @@ final class App
     }
 
     public function locationName(string $slug): ?string { return $this->locations()[$slug] ?? null; }
+
+    public function address(array $registration): string
+    {
+        $address = trim(trim((string)($registration['street'] ?? '')).' '.trim((string)($registration['house_number'] ?? '')));
+        return $address !== '' ? $address : trim((string)($registration['address'] ?? ''));
+    }
 
     public function legalMarkdown(string $envKey): ?string
     {
@@ -140,8 +165,8 @@ final class App
                 phone=excluded.phone, email=excluded.email, publication_consent=excluded.publication_consent, updated_at=CURRENT_TIMESTAMP';
         $s = $this->db->prepare($sql);
         $s->execute([
-            ':location'=>$location, ':day'=>$day, ':name'=>$data['name'], ':address'=>$data['address'],
-            ':street'=>$data['address'], ':house_number'=>'', ':phone'=>$data['phone'], ':email'=>$data['email'] ?: null,
+            ':location'=>$location, ':day'=>$day, ':name'=>$data['name'], ':address'=>trim($data['street'].' '.$data['house_number']),
+            ':street'=>$data['street'], ':house_number'=>$data['house_number'], ':phone'=>$data['phone'], ':email'=>$data['email'] ?: null,
             ':consent'=>!empty($data['publication_consent']) ? 1 : 0,
         ]);
     }
@@ -255,6 +280,17 @@ final class App
         if (!in_array('address', $columns, true)) {
             $this->db->exec("ALTER TABLE registrations ADD COLUMN address TEXT NOT NULL DEFAULT ''");
             $this->db->exec("UPDATE registrations SET address = trim(street || ' ' || house_number) WHERE address = ''");
+        }
+        $legacyRows = $this->db->query("SELECT id, address FROM registrations WHERE trim(house_number) = '' AND trim(address) <> ''")->fetchAll(PDO::FETCH_ASSOC);
+        $update = $this->db->prepare('UPDATE registrations SET street = ?, house_number = ? WHERE id = ?');
+        foreach ($legacyRows as $row) {
+            $street = trim((string)$row['address']);
+            $houseNumber = '';
+            if (preg_match('/^(.*\S)\s+(\d+[A-Za-z]?(?:\s*[-\/]\s*\d+[A-Za-z]?)?)$/u', $street, $match)) {
+                $street = trim($match[1]);
+                $houseNumber = trim($match[2]);
+            }
+            $update->execute([$street, $houseNumber, $row['id']]);
         }
     }
 }
