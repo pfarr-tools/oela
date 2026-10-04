@@ -4,5 +4,6 @@
 /.env
 /src/.env
 /src/content/
+/src/config/cities.json
 /var/*.sqlite
 /var/*.sqlite-*

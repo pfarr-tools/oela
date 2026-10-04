@@ -4,6 +4,9 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$ROOT"
 
+export OELA_UID="${OELA_UID:-$(id -u)}"
+export OELA_GID="${OELA_GID:-$(id -g)}"
+
 ensure_env() {
     if [[ ! -f .env ]]; then
         cp .env.example .env
@@ -60,7 +63,7 @@ case "$command" in
             -e APP_ENV=testing \
             -e APP_SECRET=oela-testing-secret-oela-testing-secret \
             -e DB_PATH=/tmp/oela-testing.sqlite \
-            app sh -c 'php tests/AppTest.php && php tests/ValidationTest.php && php tests/LegalTest.php && php tests/FormTest.php' "$@"
+            app sh -c 'php tests/AppTest.php && php tests/ValidationTest.php && php tests/LegalTest.php && php tests/FormTest.php && php tests/CityTemplateTest.php' "$@"
         ;;
     help|-h|--help)
         cat <<'USAGE'

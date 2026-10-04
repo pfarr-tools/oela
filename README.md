@@ -48,10 +48,27 @@ Nach einem Pull aktualisiert und startet `./oela update` die Container neu:
 
 Beim ersten `./oela init` wird `.env` automatisch aus `.env.example` angelegt (falls sie noch fehlt) und ein kryptografisch zufälliger `APP_SECRET` erzeugt. Einen bereits gesetzten Secret überschreibt das Setup nicht. Danach nur noch `APP_URL` in `.env` auf die echte Domain setzen. `var/` muss für PHP schreibbar sein. Die SQLite-Datenbank wird automatisch angelegt.
 
-Die Orte werden über eine kommagetrennte `LOCATION`-Einstellung konfiguriert,
-zum Beispiel `LOCATION=Nebringen,Öschelbronn,Tailfingen`. Daraus entstehen die
-Slugs automatisch (`nebringen`, `oeschelbronn`, `tailfingen`); `ß` wird dabei zu
-`ss`.
+Die Orte werden über die lokale Datei `src/config/cities.json` konfiguriert.
+Sie wird beim ersten `./oela init` aus `src/config/cities.example.json` angelegt
+und ist von Git ausgeschlossen. Der Pfad kann mit `CITIES_FILE` in `.env`
+angepasst werden. Die Slugs entstehen automatisch aus den Namen; `ß` wird dabei
+zu `ss`.
+
+Beispiel:
+
+```json
+{
+  "cities": [
+    { "name": "Nebringen", "email": "kontakt@example.org", "start_time": "17:00" },
+    { "name": "Öschelbronn", "email": "", "start_time": "" }
+  ]
+}
+```
+
+Eine konfigurierte E-Mail-Adresse wird als `Kontakt`-Link im Footer der
+jeweiligen Ortsseiten ausgegeben. Eine konfigurierte Startzeit erscheint auf
+der Ortsauswahl. Die bisherige kommagetrennte `LOCATION`-Einstellung bleibt als
+Fallback erhalten, wenn keine Ortsdatei vorhanden ist.
 
 Titel, Logo und Text der Veröffentlichungseinwilligung können ebenfalls über
 `.env` angepasst werden:

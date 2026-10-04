@@ -12,6 +12,7 @@ final class App
 
     private array $env;
     private PDO $db;
+    private ?array $cityConfig = null;
 
     public function __construct(private string $root)
     {
@@ -53,6 +54,20 @@ final class App
 
     public function locations(): array
     {
+        $configuredCities = $this->cities();
+        if ($configuredCities !== []) {
+            $locations = [];
+            foreach ($configuredCities as $city) {
+                $slug = self::locationSlug($city['name']);
+                if ($slug !== '' && !isset($locations[$slug])) {
+                    $locations[$slug] = $city['name'];
+                }
+            }
+            if ($locations !== []) {
+                return $locations;
+            }
+        }
+
         $configured = trim($this->env('LOCATION'));
         if ($configured === '') {
             return $this->defaultLocations();
@@ -92,6 +107,49 @@ final class App
         ];
     }
 
+    private function cities(): array
+    {
+        if ($this->cityConfig !== null) {
+            return $this->cityConfig;
+        }
+
+        $path = $this->citiesConfigPath();
+        if (!is_file($path)) {
+            return $this->cityConfig = [];
+        }
+
+        $contents = file_get_contents($path);
+        $decoded = $contents === false ? null : json_decode($contents, true);
+        $entries = is_array($decoded) && isset($decoded['cities']) ? $decoded['cities'] : $decoded;
+        if (!is_array($entries)) {
+            throw new RuntimeException('Die Ortskonfiguration ist kein gültiges JSON-Objekt.');
+        }
+
+        $cities = [];
+        foreach ($entries as $entry) {
+            if (!is_array($entry) || trim((string)($entry['name'] ?? '')) === '') {
+                continue;
+            }
+            $startTime = trim((string)($entry['start_time'] ?? ''));
+            if ($startTime !== '' && !preg_match('/^(?:[01]\d|2[0-3]):[0-5]\d$/', $startTime)) {
+                throw new RuntimeException('Ungültige Startzeit in der Ortskonfiguration.');
+            }
+            $cities[] = [
+                'name' => trim((string)$entry['name']),
+                'email' => trim((string)($entry['email'] ?? '')),
+                'start_time' => $startTime,
+            ];
+        }
+
+        return $this->cityConfig = $cities;
+    }
+
+    private function citiesConfigPath(): string
+    {
+        $configuredPath = trim($this->env('CITIES_FILE', 'config/cities.json')) ?: 'config/cities.json';
+        return str_starts_with($configuredPath, '/') ? $configuredPath : $this->root.'/'.$configuredPath;
+    }
+
     private static function locationSlug(string $name): string
     {
         $name = strtr($name, ['Ä'=>'Ae', 'Ö'=>'Oe', 'Ü'=>'Ue', 'ä'=>'ae', 'ö'=>'oe', 'ü'=>'ue', 'ß'=>'ss']);
@@ -101,6 +159,56 @@ final class App
     }
 
     public function locationName(string $slug): ?string { return $this->locations()[$slug] ?? null; }
+
+    public function locationEmail(string $slug): ?string
+    {
+        foreach ($this->cities() as $city) {
+            if (self::locationSlug($city['name']) === $slug && filter_var($city['email'], FILTER_VALIDATE_EMAIL)) {
+                return $city['email'];
+            }
+        }
+
+        return null;
+    }
+
+    public function locationStartTime(string $slug): ?string
+    {
+        foreach ($this->cities() as $city) {
+            if (self::locationSlug($city['name']) === $slug) {
+                return $city['start_time'] !== '' ? $city['start_time'] : null;
+            }
+        }
+
+        return null;
+    }
+
+    public function obfuscatedContactHref(string $slug): ?string
+    {
+        $email = $this->locationEmail($slug);
+        if ($email === null) {
+            return null;
+        }
+
+        return implode('', array_map(
+            static fn(string $character): string => '&#x'.dechex(ord($character)).';',
+            str_split('mailto:'.$email),
+        ));
+    }
+
+    public function initializeCitiesConfig(): bool
+    {
+        $path = $this->citiesConfigPath();
+        if (is_file($path)) {
+            return false;
+        }
+
+        $example = dirname($path).'/cities.example.json';
+        if (!is_file($example) || !is_dir(dirname($path))) {
+            return false;
+        }
+
+        return copy($example, $path);
+    }
 
     public function address(array $registration): string
     {

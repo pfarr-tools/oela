@@ -1,2 +1,2 @@
-<div class="d-flex align-items-center gap-3 mb-4"><img class="brand-logo" src="<?=h($app->logoImage())?>" alt="OELA"><h1 class="h2 mb-0"><?=h($app->title())?></h1></div><p class="text-secondary">Bitte wählen Sie Ihren Ort:</p>
+<div class="d-flex align-items-center gap-3 mb-4"><img class="align-self-start brand-logo" src="<?=h($app->logoImage())?>" alt="OELA"><h1 class="h2 mb-0"><?=h($app->title())?></h1></div><p class="text-secondary">Bitte wählen Sie Ihren Ort:</p>
 <div class="d-grid gap-3"><?php foreach($app->locations() as $slug=>$name):?><a class="btn btn-success btn-lg" href="/<?=h($slug)?>"><?=h($name)?></a><?php endforeach?></div>

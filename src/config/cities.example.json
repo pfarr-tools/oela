@@ -1,0 +1,19 @@
+{
+  "cities": [
+    {
+      "name": "Nebringen",
+      "email": "",
+      "start_time": "17:00"
+    },
+    {
+      "name": "Öschelbronn",
+      "email": "",
+      "start_time": ""
+    },
+    {
+      "name": "Tailfingen",
+      "email": "",
+      "start_time": ""
+    }
+  ]
+}

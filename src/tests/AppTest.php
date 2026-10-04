@@ -24,6 +24,32 @@ try {
     if ($locations !== ['nebringen'=>'Nebringen', 'oeschelbronn'=>'Öschelbronn', 'fussgaenger'=>'Fußgänger']) {
         throw new RuntimeException('LOCATION wurde nicht korrekt in Orts-Slugs umgewandelt.');
     }
+
+    $configuredRoot = sys_get_temp_dir().'/oela-cities-test-'.bin2hex(random_bytes(4));
+    mkdir($configuredRoot.'/var', 0777, true);
+    mkdir($configuredRoot.'/config', 0777, true);
+    file_put_contents($configuredRoot.'/.env', "DB_PATH=var/advent.sqlite\nAPP_SECRET=test-secret-test-secret-test-secret\nCITIES_FILE=config/cities.json\n");
+    file_put_contents($configuredRoot.'/config/cities.json', json_encode([
+        'cities' => [
+            ['name' => 'Nebringen', 'email' => 'kontakt@nebringen.example', 'start_time' => '17:00'],
+            ['name' => 'Öschelbronn', 'email' => '', 'start_time' => ''],
+        ],
+    ], JSON_THROW_ON_ERROR));
+    putenv('DB_PATH='.$configuredRoot.'/var/advent.sqlite');
+    $configuredApp = new App($configuredRoot);
+    if ($configuredApp->locations() !== ['nebringen' => 'Nebringen', 'oeschelbronn' => 'Öschelbronn']) {
+        throw new RuntimeException('Die JSON-Ortskonfiguration wurde nicht geladen.');
+    }
+    if ($configuredApp->locationEmail('nebringen') !== 'kontakt@nebringen.example' || $configuredApp->locationEmail('oeschelbronn') !== null) {
+        throw new RuntimeException('Die Orts-Kontaktadressen wurden nicht korrekt geladen.');
+    }
+    if ($configuredApp->locationStartTime('nebringen') !== '17:00' || $configuredApp->locationStartTime('oeschelbronn') !== null) {
+        throw new RuntimeException('Die Orts-Startzeiten wurden nicht korrekt geladen.');
+    }
+    if ($configuredApp->obfuscatedContactHref('nebringen') === 'mailto:kontakt@nebringen.example' || !str_contains($configuredApp->obfuscatedContactHref('nebringen') ?? '', '&#x')) {
+        throw new RuntimeException('Die Kontaktadresse wird nicht obfuskiert ausgegeben.');
+    }
+    putenv('DB_PATH='.$testPath);
     if ($app->weekdayShort(1, 2026) !== 'Di') {
         throw new RuntimeException('Der Wochentag für den 1. Dezember 2026 ist falsch.');
     }
@@ -138,5 +164,13 @@ try {
         array_map('unlink', glob($legacyRoot.'/var/*.sqlite') ?: []);
         rmdir($legacyRoot.'/var');
         rmdir($legacyRoot);
+    }
+    if (isset($configuredRoot)) {
+        array_map('unlink', glob($configuredRoot.'/config/*') ?: []);
+        array_map('unlink', glob($configuredRoot.'/var/*.sqlite') ?: []);
+        rmdir($configuredRoot.'/config');
+        rmdir($configuredRoot.'/var');
+        unlink($configuredRoot.'/.env');
+        rmdir($configuredRoot);
     }
 }

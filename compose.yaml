@@ -5,6 +5,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+    user: "${OELA_UID:-1000}:${OELA_GID:-1000}"
     working_dir: /var/www/html
     environment:
       APP_ENV: "${APP_ENV:-local}"

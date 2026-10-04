@@ -52,6 +52,7 @@ $cmd = $argv[1] ?? 'help';
 
 if ($cmd === 'init') {
     if ($created) echo ".env wurde aus .env.example angelegt.\n";
+    if ($app->initializeCitiesConfig()) echo "Ortskonfiguration wurde aus cities.example.json angelegt.\n";
     echo "Datenbank bereit.\n";
     exit(0);
 }
