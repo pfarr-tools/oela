@@ -3,5 +3,6 @@
 /.superpowers/
 /.env
 /src/.env
+/src/content/
 /var/*.sqlite
 /var/*.sqlite-*
